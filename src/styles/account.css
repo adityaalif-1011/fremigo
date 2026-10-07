@@ -1,0 +1,59 @@
+.account-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+
+.notification {
+    display: flex;
+    gap: 15px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 18px;
+    margin-bottom: 12px;
+}
+
+
+.notification.unread {
+    border-left: 5px solid var(--pink-dark);
+    background: var(--pink-soft);
+}
+
+
+.points {
+    background: linear-gradient(
+        135deg,
+        #e8f7ef,
+        #fff0f4
+    );
+
+    border-radius: 24px;
+    padding: 28px;
+}
+
+
+.progress {
+    height: 12px;
+    background: #e7ece9;
+    border-radius: 99px;
+    overflow: hidden;
+}
+
+
+.progress span {
+    display: block;
+    height: 100%;
+    width: 72%;
+    background: var(--green-dark);
+}
+
+
+@media (max-width: 800px) {
+
+    .account-grid {
+        grid-template-columns: 1fr;
+    }
+
+}

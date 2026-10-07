@@ -1,0 +1,35 @@
+.checkout {
+    display: grid;
+    grid-template-columns: 1.2fr .8fr;
+    gap: 20px;
+}
+
+
+.panel {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 22px;
+}
+
+
+.pay-option {
+    border: 1px solid var(--line);
+    padding: 13px;
+    border-radius: 13px;
+    margin-bottom: 9px;
+    cursor: pointer;
+}
+
+
+.pay-option.selected {
+    border-color: var(--green);
+    background: var(--green-soft);
+}
+
+
+@media (max-width: 800px) {
+    .checkout {
+        grid-template-columns: 1fr;
+    }
+}

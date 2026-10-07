@@ -1,0 +1,24 @@
+.seller-banner {
+    background: linear-gradient(
+        135deg,
+        #3d8f6d,
+        #78c6a3
+    );
+    color: #fff;
+    border-radius: 24px;
+    padding: 28px;
+}
+
+
+.seller-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+
+@media (max-width: 750px) {
+    .seller-grid {
+        grid-template-columns: 1fr;
+    }
+}

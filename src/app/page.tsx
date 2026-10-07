@@ -1,69 +1,358 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+'use client';
+
+import Link from 'next/link';
+import '@/styles/home.css';
 
 export default function Home() {
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>
-            To get started, edit the{" "}
-            <code className={styles.code}>page.tsx</code> file.
-          </h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <>
+      {/* ==============================
+           HEADER / TOPBAR
+      =============================== */}
+      <header className="topbar">
+
+        <Link className="logo" href="/">
+          pre<span>migo</span>.id
+        </Link>
+
+        <div className="search">
+          <span className="search-icon">⌕</span>
+
+          <input
+            placeholder="Cari aplikasi, paket, atau transaksi..."
+            onClick={() => {}}
+          />
         </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+
+        <div className="top-actions">
+
+          <button
+            className="icon-btn badge"
+            data-badge="2"
+            onClick={() => {}}
           >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            🔔
+          </button>
+
+          <button
+            className="icon-btn"
+            onClick={() => {}}
           >
-            Documentation
-          </a>
+            🛒
+          </button>
+
+          <button
+            className="icon-btn"
+            onClick={() => {}}
+          >
+            👤
+          </button>
+
         </div>
-      </main>
-    </div>
+
+      </header>
+
+
+      {/* ==============================
+           LAYOUT
+      =============================== */}
+      <div className="layout">
+
+
+        {/* ==============================
+             SIDEBAR
+        =============================== */}
+        <aside className="sidebar">
+
+          <Link
+            className="side-link active"
+            href="/"
+          >
+            🏠
+            <span>Beranda</span>
+          </Link>
+
+          <Link
+            className="side-link"
+            href="/katalog"
+          >
+            🛍️
+            <span>Katalog</span>
+          </Link>
+
+          <Link
+            className="side-link"
+            href="/compare"
+          >
+            ⚖️
+            <span>Bandingkan</span>
+          </Link>
+
+          <Link
+            className="side-link"
+            href="/riwayat"
+          >
+            🧾
+            <span>Riwayat</span>
+          </Link>
+
+          <Link
+            className="side-link"
+            href="/notifications"
+          >
+            🔔
+            <span>Notifikasi</span>
+          </Link>
+
+          <Link
+            className="side-link"
+            href="/reward"
+          >
+            🎁
+            <span>Poin Reward</span>
+          </Link>
+
+          <Link
+            className="side-link"
+            href="/seller"
+          >
+            🏪
+            <span>Seller Center</span>
+          </Link>
+
+        </aside>
+
+
+        {/* ==============================
+             MAIN CONTENT
+        =============================== */}
+        <main className="main">
+
+          <div className="container">
+
+
+            {/* ==============================
+                 HERO SECTION
+            =============================== */}
+            <section className="hero">
+
+              <div>
+
+                <div
+                  className="chip active"
+                  style={{ display: 'inline-block' }}
+                >
+                  Marketplace aplikasi premium
+                </div>
+
+                <h1>
+                  Premium jadi lebih
+                  <span style={{ color: 'var(--pink-dark)' }}>
+                    mudah & nyaman.
+                  </span>
+                </h1>
+
+                <p>
+                  Cari, bandingkan, beli, dan pantau masa
+                  berlangganan aplikasi premium dalam satu
+                  platform. Informasi harga, durasi, fitur,
+                  review, dan bantuan ditampilkan secara jelas.
+                </p>
+
+                <button
+                  className="btn btn-primary"
+                  onClick={() => {}}
+                >
+                  Jelajahi Aplikasi →
+                </button>
+
+                <button
+                  className="btn btn-outline"
+                  onClick={() => {}}
+                >
+                  Bandingkan Produk
+                </button>
+
+              </div>
+
+
+              {/* HERO ART */}
+              <div className="hero-art">
+
+                <div className="orb">
+                  📱
+                </div>
+
+              </div>
+
+            </section>
+
+
+            {/* ==============================
+                 FEATURE SECTION
+            =============================== */}
+            <section className="section">
+
+              <div className="feature-strip">
+
+
+                {/* Feature 1 */}
+                <div className="feature">
+
+                  <div className="ico">
+                    🔎
+                  </div>
+
+                  <h3>
+                    Search & Filter
+                  </h3>
+
+                  <p className="muted">
+                    Cari berdasarkan nama, kategori,
+                    harga, rating, dan durasi.
+                  </p>
+
+                </div>
+
+
+                {/* Feature 2 */}
+                <div className="feature">
+
+                  <div className="ico">
+                    ⚖️
+                  </div>
+
+                  <h3>
+                    Perbandingan
+                  </h3>
+
+                  <p className="muted">
+                    Bandingkan paket dan harga
+                    sebelum membeli.
+                  </p>
+
+                </div>
+
+
+                {/* Feature 3 */}
+                <div className="feature">
+
+                  <div className="ico">
+                    🔔
+                  </div>
+
+                  <h3>
+                    Pengingat H-3
+                  </h3>
+
+                  <p className="muted">
+                    Dapatkan notifikasi sebelum
+                    masa premium berakhir.
+                  </p>
+
+                </div>
+
+              </div>
+
+            </section>
+
+
+            {/* ==============================
+                 POPULAR APPLICATION SECTION
+            =============================== */}
+            <section className="section">
+
+              <div className="section-head">
+
+                <div>
+
+                  <h2>
+                    Aplikasi Populer
+                  </h2>
+
+                  <p className="muted">
+                    Pilihan untuk belajar, bekerja,
+                    desain, dan hiburan.
+                  </p>
+
+                </div>
+
+                <Link
+                  className="btn btn-soft"
+                  href="/katalog"
+                >
+                  Lihat semua
+                </Link>
+
+              </div>
+
+
+              {/* Product Grid */}
+              <div
+                id="popularGrid"
+                className="grid"
+              />
+
+            </section>
+
+
+            {/* ==============================
+                 PROMO / BUNDLE SECTION
+            =============================== */}
+            <section className="section">
+
+              <div className="promo">
+
+                <div>
+
+                  <h2 style={{ margin: '0 0 5px' }}>
+                    Paket Mahasiswa
+                  </h2>
+
+                  <div>
+                    Bundling hemat untuk kebutuhan
+                    kuliah & produktivitas.
+                  </div>
+
+                </div>
+
+                <button
+                  id="bundleBtn"
+                  className="btn"
+                >
+                  Lihat Paket
+                </button>
+
+              </div>
+
+            </section>
+
+
+            {/* ==============================
+                 FOOTER
+            =============================== */}
+            <footer className="footer">
+
+              © 2026 Primogo.id ·
+              Marketplace aplikasi premium ·
+              Demo UI/UX
+
+            </footer>
+
+          </div>
+
+        </main>
+
+      </div>
+
+
+      {/* ==============================
+           TOAST NOTIFICATION
+      =============================== */}
+      <div
+        id="toast"
+        className="toast"
+      />
+    </>
   );
 }
