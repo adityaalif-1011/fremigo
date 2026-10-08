@@ -519,11 +519,13 @@ select {
     justify-content: center;
     z-index: 50;
     padding: 20px;
+    pointer-events: none;
 }
 
 
 .modal.show {
     display: flex;
+    pointer-events: auto;
 }
 
 
@@ -558,6 +560,7 @@ select {
     border-radius: 13px;
     display: none;
     z-index: 100;
+    pointer-events: none;
 }
 
 

@@ -1,9 +1,71 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 import '@/styles/account.css';
 
 export default function Reward() {
+  const router = useRouter();
+
+  const [points, setPoints] = useState<number | null>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let cancelled = false;
+
+    const init = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        router.push('/login');
+        return;
+      }
+
+      const { data } = await supabase
+        .from('profiles')
+        .select('points')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (!cancelled) {
+        setPoints(data?.points ?? 0);
+      }
+
+      channel = supabase
+        .channel('points')
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'profiles',
+            filter: `id=eq.${user.id}`,
+          },
+          (payload) => {
+            if (!cancelled) {
+              setPoints(payload.new.points);
+            }
+          },
+        )
+        .subscribe();
+    };
+
+    init();
+
+    return () => {
+      cancelled = true;
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
+  }, [router]);
+
   return (
     <>
       {/* =================================
@@ -24,7 +86,7 @@ export default function Reward() {
           {/* Tombol Beranda */}
           <button
             className="icon-btn"
-            onClick={() => {}}
+            onClick={() => router.push('/')}
           >
             🏠
           </button>
@@ -68,14 +130,15 @@ export default function Reward() {
               Saldo poin kamu
             </div>
 
-            {/* TODO: replace with Supabase realtime */}
             <h2
               style={{
                 fontSize: '42px',
                 margin: '5px 0',
               }}
             >
-              1.250 poin
+              {points === null
+                ? '—'
+                : `${points.toLocaleString('id-ID')} poin`}
             </h2>
 
             <p>

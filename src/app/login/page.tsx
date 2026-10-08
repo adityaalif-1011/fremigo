@@ -1,9 +1,71 @@
 'use client';
 
+import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 import '@/styles/auth.css';
 
 export default function Login() {
+  const router = useRouter();
+  const supabase = createClient();
+
+  const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [signupNama, setSignupNama] = useState('');
+  const [signupEmail, setSignupEmail] = useState('');
+  const [signupPassword, setSignupPassword] = useState('');
+
+  const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: loginEmail,
+      password: loginPassword,
+    });
+
+    if (error) {
+      setError(error.message);
+    } else {
+      router.push('/');
+      router.refresh();
+    }
+
+    setLoading(false);
+  };
+
+  const handleSignup = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    const { error } = await supabase.auth.signUp({
+      email: signupEmail,
+      password: signupPassword,
+      options: {
+        data: {
+          username: signupNama,
+          full_name: signupNama,
+        },
+      },
+    });
+
+    if (error) {
+      setError(error.message);
+    } else {
+      setSuccess('Akun berhasil dibuat. Cek email kamu untuk verifikasi.');
+    }
+
+    setLoading(false);
+  };
+
   return (
     <>
       {/* =================================
@@ -32,8 +94,12 @@ export default function Login() {
 
             {/* Tombol Login */}
             <button
-              className="active"
-              onClick={() => {}}
+              className={mode === 'login' ? 'active' : undefined}
+              onClick={() => {
+                setMode('login');
+                setError(null);
+                setSuccess(null);
+              }}
             >
               Login
             </button>
@@ -41,7 +107,12 @@ export default function Login() {
 
             {/* Tombol Sign Up */}
             <button
-              onClick={() => {}}
+              className={mode === 'signup' ? 'active' : undefined}
+              onClick={() => {
+                setMode('signup');
+                setError(null);
+                setSuccess(null);
+              }}
             >
               Sign Up
             </button>
@@ -53,8 +124,13 @@ export default function Login() {
                LOGIN FORM
           ================================== */}
 
-          {/* TODO: wire to Supabase Auth */}
-          <form id="loginForm">
+          <form
+            id="loginForm"
+            onSubmit={handleLogin}
+            style={{
+              display: mode === 'login' ? 'block' : 'none',
+            }}
+          >
 
             {/* Email */}
             <div className="field">
@@ -67,6 +143,8 @@ export default function Login() {
                 type="email"
                 required
                 placeholder="nama@email.com"
+                value={loginEmail}
+                onChange={e => setLoginEmail(e.target.value)}
               />
 
             </div>
@@ -83,6 +161,8 @@ export default function Login() {
                 type="password"
                 required
                 placeholder="••••••••"
+                value={loginPassword}
+                onChange={e => setLoginPassword(e.target.value)}
               />
 
             </div>
@@ -92,18 +172,24 @@ export default function Login() {
             <button
               className="btn btn-primary"
               style={{ width: '100%' }}
+              disabled={loading}
             >
-              Login
+              {loading ? 'Loading...' : 'Login'}
             </button>
 
 
-            {/* Demo Information */}
-            <p
-              className="muted"
-              style={{ textAlign: 'center' }}
-            >
-              Demo UI — belum terhubung database.
-            </p>
+            {/* Error / Success */}
+            {error && (
+              <p style={{ color: '#d33', textAlign: 'center', marginTop: 12 }}>
+                {error}
+              </p>
+            )}
+
+            {success && (
+              <p style={{ color: '#2a7', textAlign: 'center', marginTop: 12 }}>
+                {success}
+              </p>
+            )}
 
           </form>
 
@@ -112,10 +198,12 @@ export default function Login() {
                SIGN UP FORM
           ================================== */}
 
-          {/* TODO: wire to Supabase Auth */}
           <form
             id="signupForm"
-            style={{ display: 'none' }}
+            onSubmit={handleSignup}
+            style={{
+              display: mode === 'signup' ? 'block' : 'none',
+            }}
           >
 
             {/* Nama */}
@@ -127,6 +215,8 @@ export default function Login() {
 
               <input
                 required
+                value={signupNama}
+                onChange={e => setSignupNama(e.target.value)}
               />
 
             </div>
@@ -142,6 +232,8 @@ export default function Login() {
               <input
                 type="email"
                 required
+                value={signupEmail}
+                onChange={e => setSignupEmail(e.target.value)}
               />
 
             </div>
@@ -157,6 +249,8 @@ export default function Login() {
               <input
                 type="password"
                 required
+                value={signupPassword}
+                onChange={e => setSignupPassword(e.target.value)}
               />
 
             </div>
@@ -166,9 +260,24 @@ export default function Login() {
             <button
               className="btn btn-pink"
               style={{ width: '100%' }}
+              disabled={loading}
             >
-              Buat Akun
+              {loading ? 'Loading...' : 'Buat Akun'}
             </button>
+
+
+            {/* Error / Success */}
+            {error && (
+              <p style={{ color: '#d33', textAlign: 'center', marginTop: 12 }}>
+                {error}
+              </p>
+            )}
+
+            {success && (
+              <p style={{ color: '#2a7', textAlign: 'center', marginTop: 12 }}>
+                {success}
+              </p>
+            )}
 
           </form>
 

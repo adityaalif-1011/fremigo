@@ -1,9 +1,32 @@
 'use client';
 
+import { Suspense } from 'react';
 import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
 import '@/styles/detail.css';
 
+function BuyButton() {
+  const router = useRouter();
+  const params = useParams<{ id: string }>();
+  const productId = Number(params.id);
+
+  return (
+    <button
+      className="btn btn-primary"
+      id="buy"
+      onClick={() => {
+        localStorage.setItem('cart', JSON.stringify([productId]));
+        router.push('/checkout');
+      }}
+    >
+      Beli Sekarang
+    </button>
+  );
+}
+
 export default function ProdukDetail() {
+  const router = useRouter();
+
   return (
     <>
       {/* =================================
@@ -26,7 +49,7 @@ export default function ProdukDetail() {
 
           <input
             placeholder="Cari aplikasi..."
-            onClick={() => {}}
+            onClick={() => router.push('/katalog')}
           />
 
         </div>
@@ -35,19 +58,10 @@ export default function ProdukDetail() {
         {/* Top Actions */}
         <div className="top-actions">
 
-          {/* Tombol Bandingkan */}
-          <button
-            className="icon-btn"
-            onClick={() => {}}
-          >
-            ⚖️
-          </button>
-
-
           {/* Tombol Keranjang */}
           <button
             className="icon-btn"
-            onClick={() => {}}
+            onClick={() => router.push('/checkout')}
           >
             🛒
           </button>
@@ -183,12 +197,9 @@ export default function ProdukDetail() {
                   Rp45.000
                 </strong>
 
-                <button
-                  className="btn btn-primary"
-                  id="buy"
-                >
-                  Beli Sekarang
-                </button>
+                <Suspense fallback={null}>
+                  <BuyButton />
+                </Suspense>
               </div>
 
               <div

@@ -1,9 +1,96 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import { createPurchase } from '@/app/actions/checkout';
 import '@/styles/checkout.css';
 
+type CartProduct = {
+  id: number;
+  name: string;
+  icon: string;
+  price: number;
+  seller: string;
+  duration: string;
+};
+
+const rupiah = (n: number) =>
+  new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    maximumFractionDigits: 0,
+  }).format(n);
+
 export default function Checkout() {
+  const router = useRouter();
+
+  const [products, setProducts] = useState<CartProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [paying, setPaying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const load = async () => {
+      let ids: number[] = [];
+
+      try {
+        const raw = JSON.parse(localStorage.getItem('cart') || '[]');
+        if (Array.isArray(raw)) {
+          ids = raw
+            .map((value) => Number(value))
+            .filter((n) => Number.isFinite(n) && n > 0);
+        }
+      } catch {
+        ids = [];
+      }
+
+      if (ids.length === 0) {
+        setLoading(false);
+        return;
+      }
+
+      const supabase = createClient();
+      const { data, error: fetchError } = await supabase
+        .from('products')
+        .select('id, name, icon, price, seller, duration')
+        .in('id', ids);
+
+      if (fetchError) {
+        setError(fetchError.message ?? 'Gagal memuat keranjang.');
+      } else if (data) {
+        setProducts(data as CartProduct[]);
+      }
+
+      setLoading(false);
+    };
+
+    load();
+  }, []);
+
+  const handlePay = async () => {
+    if (products.length === 0 || paying) return;
+
+    setPaying(true);
+    setError(null);
+
+    for (const product of products) {
+      const res = await createPurchase(product.id);
+
+      if (res.error) {
+        setError(res.error);
+        setPaying(false);
+        return;
+      }
+    }
+
+    localStorage.removeItem('cart');
+    router.push('/riwayat');
+  };
+
+  const total = products.reduce((sum, p) => sum + p.price, 0);
+
   return (
     <>
       {/* =================================
@@ -23,7 +110,7 @@ export default function Checkout() {
 
           <button
             className="icon-btn"
-            onClick={() => {}}
+            onClick={() => router.push('/katalog')}
           >
             🛍️
           </button>
@@ -153,32 +240,67 @@ export default function Checkout() {
               </h2>
 
 
-              {/* Summary akan diisi oleh JavaScript */}
-              {/* TODO: wire to Supabase purchase + points trigger */}
+              {/* Summary diisi dari keranjang */}
               <div id="summary">
-                <div className="row">
-                  <span>🎨 Canva Pro</span>
-                  <b>Rp45.000</b>
-                </div>
+                {loading ? (
+                  <p className="muted">
+                    Memuat...
+                  </p>
+                ) : products.length === 0 ? (
+                  <div className="empty" style={{ padding: '30px 10px' }}>
+                    Keranjang kosong.
 
-                <p className="muted">
-                  Paket 30 hari · Seller PrimeStore
-                </p>
+                    <div style={{ marginTop: 14 }}>
+                      <Link className="btn btn-soft" href="/katalog">
+                        Belanja dulu
+                      </Link>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {products.map((p) => (
+                      <div key={p.id} className="row">
+                        <span>
+                          {p.icon} {p.name}
+                        </span>
+                        <b>{rupiah(p.price)}</b>
+                      </div>
+                    ))}
 
-                <hr
-                  style={{
-                    border: 0,
-                    borderTop: '1px solid var(--line)',
-                  }}
-                />
+                    <p className="muted">
+                      Paket {products[0].duration} · Seller {products[0].seller}
+                    </p>
 
-                <div className="row">
-                  <b>Total</b>
-                  <strong className="price">
-                    Rp45.000
-                  </strong>
-                </div>
+                    <hr
+                      style={{
+                        border: 0,
+                        borderTop: '1px solid var(--line)',
+                      }}
+                    />
+
+                    <div className="row">
+                      <b>Total</b>
+                      <strong className="price">
+                        {rupiah(total)}
+                      </strong>
+                    </div>
+                  </>
+                )}
               </div>
+
+
+              {/* Error */}
+              {error && (
+                <p
+                  style={{
+                    color: '#d9534f',
+                    textAlign: 'center',
+                    marginTop: 14,
+                  }}
+                >
+                  {error}
+                </p>
+              )}
 
 
               {/* Tombol Pembayaran */}
@@ -186,8 +308,10 @@ export default function Checkout() {
                 id="pay"
                 className="btn btn-primary"
                 style={{ width: '100%', marginTop: '18px' }}
+                onClick={handlePay}
+                disabled={loading || paying || products.length === 0}
               >
-                Bayar Sekarang
+                {paying ? 'Memproses...' : 'Bayar Sekarang'}
               </button>
 
             </aside>

@@ -1,9 +1,11 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import '@/styles/home.css';
 
 export default function Home() {
+  const router = useRouter();
   return (
     <>
       {/* ==============================
@@ -20,7 +22,7 @@ export default function Home() {
 
           <input
             placeholder="Cari aplikasi, paket, atau transaksi..."
-            onClick={() => {}}
+            onClick={() => router.push('/katalog')}
           />
         </div>
 
@@ -29,21 +31,21 @@ export default function Home() {
           <button
             className="icon-btn badge"
             data-badge="2"
-            onClick={() => {}}
+            onClick={() => router.push('/notifications')}
           >
             🔔
           </button>
 
           <button
             className="icon-btn"
-            onClick={() => {}}
+            onClick={() => router.push('/checkout')}
           >
             🛒
           </button>
 
           <button
             className="icon-btn"
-            onClick={() => {}}
+            onClick={() => router.push('/account')}
           >
             👤
           </button>
@@ -82,14 +84,6 @@ export default function Home() {
 
           <Link
             className="side-link"
-            href="/compare"
-          >
-            ⚖️
-            <span>Bandingkan</span>
-          </Link>
-
-          <Link
-            className="side-link"
             href="/riwayat"
           >
             🧾
@@ -110,14 +104,6 @@ export default function Home() {
           >
             🎁
             <span>Poin Reward</span>
-          </Link>
-
-          <Link
-            className="side-link"
-            href="/seller"
-          >
-            🏪
-            <span>Seller Center</span>
           </Link>
 
         </aside>
@@ -164,13 +150,6 @@ export default function Home() {
                   onClick={() => {}}
                 >
                   Jelajahi Aplikasi →
-                </button>
-
-                <button
-                  className="btn btn-outline"
-                  onClick={() => {}}
-                >
-                  Bandingkan Produk
                 </button>
 
               </div>

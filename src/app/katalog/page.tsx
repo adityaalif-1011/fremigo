@@ -1,9 +1,63 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 import '@/styles/catalog.css';
 
+type Product = {
+  id: number;
+  name: string;
+  cat: string;
+  icon: string;
+  price: number;
+  old: number | null;
+  duration: string;
+  rating: number;
+  stock: number;
+  features: string[];
+  seller: string | null;
+};
+
+const rupiah = (n: number) =>
+  new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    maximumFractionDigits: 0,
+  }).format(n);
+
 export default function Katalog() {
+  const router = useRouter();
+
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [q, setQ] = useState('');
+  const [cat, setCat] = useState('all');
+  const [maxPrice, setMaxPrice] = useState(100000);
+  const [minRating, setMinRating] = useState(0);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    supabase
+      .from('products')
+      .select('*')
+      .order('id')
+      .then(({ data }) => {
+        setProducts((data as Product[]) ?? []);
+        setLoading(false);
+      });
+  }, []);
+
+  const filtered = products.filter((p) => {
+    const matchQ = q === '' || p.name.toLowerCase().includes(q.toLowerCase());
+    const matchCat = cat === 'all' || p.cat === cat;
+    const matchPrice = p.price <= maxPrice;
+    const matchRating = p.rating >= minRating;
+    return matchQ && matchCat && matchPrice && matchRating;
+  });
+
   return (
     <>
       {/* =================================
@@ -28,6 +82,8 @@ export default function Katalog() {
           <input
             id="q"
             placeholder="Cari nama aplikasi..."
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
           />
 
         </div>
@@ -36,19 +92,10 @@ export default function Katalog() {
         {/* Top Actions */}
         <div className="top-actions">
 
-          {/* Tombol Bandingkan */}
-          <button
-            className="icon-btn"
-            onClick={() => {}}
-          >
-            ⚖️
-          </button>
-
-
           {/* Tombol Keranjang */}
           <button
             className="icon-btn"
-            onClick={() => {}}
+            onClick={() => router.push('/checkout')}
           >
             🛒
           </button>
@@ -57,7 +104,7 @@ export default function Katalog() {
           {/* Tombol Login */}
           <button
             className="icon-btn"
-            onClick={() => {}}
+            onClick={() => router.push('/account')}
           >
             👤
           </button>
@@ -104,18 +151,6 @@ export default function Katalog() {
           </Link>
 
 
-          {/* Bandingkan */}
-          <Link
-            className="side-link"
-            href="/compare"
-          >
-            ⚖️
-            <span>
-              Bandingkan
-            </span>
-          </Link>
-
-
           {/* Riwayat */}
           <Link
             className="side-link"
@@ -152,17 +187,6 @@ export default function Katalog() {
           </Link>
 
 
-          {/* Seller Center */}
-          <Link
-            className="side-link"
-            href="/seller"
-          >
-            🏪
-            <span>
-              Seller Center
-            </span>
-          </Link>
-
         </aside>
 
 
@@ -198,7 +222,9 @@ export default function Katalog() {
               <span
                 id="count"
                 className="result-count"
-              />
+              >
+                Menampilkan {filtered.length} dari {products.length} produk
+              </span>
 
             </div>
 
@@ -211,33 +237,37 @@ export default function Katalog() {
 
 
               {/* Filter Kategori */}
-              <select id="cat">
+              <select
+                id="cat"
+                value={cat}
+                onChange={(e) => setCat(e.target.value)}
+              >
 
                 <option value="all">
                   Semua kategori
                 </option>
 
-                <option>
+                <option value="Desain">
                   Desain
                 </option>
 
-                <option>
+                <option value="Music">
                   Music
                 </option>
 
-                <option>
+                <option value="Education">
                   Education
                 </option>
 
-                <option>
+                <option value="Produktivitas">
                   Produktivitas
                 </option>
 
-                <option>
+                <option value="Entertainment">
                   Entertainment
                 </option>
 
-                <option>
+                <option value="Storage">
                   Storage
                 </option>
 
@@ -245,7 +275,11 @@ export default function Katalog() {
 
 
               {/* Filter Harga */}
-              <select id="price">
+              <select
+                id="price"
+                value={maxPrice}
+                onChange={(e) => setMaxPrice(Number(e.target.value))}
+              >
 
                 <option value="100000">
                   Semua harga
@@ -271,7 +305,11 @@ export default function Katalog() {
 
 
               {/* Filter Rating */}
-              <select id="ratingFilter">
+              <select
+                id="ratingFilter"
+                value={minRating}
+                onChange={(e) => setMinRating(Number(e.target.value))}
+              >
 
                 <option value="0">
                   Semua rating
@@ -291,7 +329,12 @@ export default function Katalog() {
               {/* Tombol Reset Filter */}
               <button
                 className="btn btn-soft"
-                onClick={() => {}}
+                onClick={() => {
+                  setQ('');
+                  setCat('all');
+                  setMaxPrice(100000);
+                  setMinRating(0);
+                }}
               >
                 Reset Filter
               </button>
@@ -303,234 +346,87 @@ export default function Katalog() {
                  PRODUCT GRID
             ================================== */}
 
-            <div
-              id="productGrid"
-              className="grid"
-            >
-              {/* TODO: replace with Supabase data */}
-              {/* Product 1: Canva Pro */}
-              <article className="card">
-                <Link href="/produk/1">
-                  <div className="app-cover">
-                    <span>🎨</span>
-                    <span className="stock">
-                      Sisa 8
-                    </span>
-                  </div>
-                </Link>
+            <div id="productGrid">
 
-                <div className="card-body">
-                  <div
-                    className="muted"
-                    style={{ fontSize: '12px' }}
-                  >
-                    Desain
-                  </div>
+              {loading ? (
+                <p>
+                  Memuat produk...
+                </p>
+              ) : filtered.length === 0 ? (
+                <p>
+                  Belum ada produk yang cocok dengan filter.
+                </p>
+              ) : (
+                <div className="grid">
 
-                  <p className="card-title">
-                    Canva Pro
-                  </p>
-
-                  <div className="rating">
-                    ★ 4.9
-                    <span className="muted">
-                      · 30 hari
-                    </span>
-                  </div>
-
-                  <p>
-                    <span className="price">
-                      Rp45.000
-                    </span>
-                    <span className="old">
-                      Rp65.000
-                    </span>
-                  </p>
-
-                  <div className="card-actions">
-                    <button
-                      className="btn btn-soft"
-                      onClick={() => {}}
+                  {filtered.map((p) => (
+                    <article
+                      className="card"
+                      key={p.id}
                     >
-                      Bandingkan
-                    </button>
-                    <button
-                      className="btn btn-primary"
-                      onClick={() => {}}
-                    >
-                      Beli
-                    </button>
-                  </div>
+                      <Link href={`/produk/${p.id}`}>
+                        <div className="app-cover">
+                          <span>
+                            {p.icon}
+                          </span>
+
+                          <span className="stock">
+                            Sisa {p.stock}
+                          </span>
+                        </div>
+                      </Link>
+
+                      <div className="card-body">
+                        <div
+                          className="muted"
+                          style={{ fontSize: '12px' }}
+                        >
+                          {p.cat}
+                        </div>
+
+                        <p className="card-title">
+                          {p.name}
+                        </p>
+
+                        <div className="rating">
+                          ★ {p.rating}
+                          <span className="muted">
+                            · {p.duration}
+                          </span>
+                        </div>
+
+                        <p>
+                          <span className="price">
+                            {rupiah(p.price)}
+                          </span>
+
+                          {p.old && (
+                            <span className="old">
+                              {rupiah(p.old)}
+                            </span>
+                          )}
+                        </p>
+
+                        <div className="card-actions">
+                          <button
+                            className="btn btn-primary"
+                            onClick={() => {
+                              localStorage.setItem(
+                                'cart',
+                                JSON.stringify([p.id]),
+                              );
+                              router.push('/checkout');
+                            }}
+                          >
+                            Beli
+                          </button>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+
                 </div>
-              </article>
-
-              {/* Product 2: Spotify Premium */}
-              <article className="card">
-                <Link href="/produk/2">
-                  <div className="app-cover">
-                    <span>🎵</span>
-                    <span className="stock">
-                      Sisa 12
-                    </span>
-                  </div>
-                </Link>
-
-                <div className="card-body">
-                  <div
-                    className="muted"
-                    style={{ fontSize: '12px' }}
-                  >
-                    Music
-                  </div>
-
-                  <p className="card-title">
-                    Spotify Premium
-                  </p>
-
-                  <div className="rating">
-                    ★ 4.8
-                    <span className="muted">
-                      · 30 hari
-                    </span>
-                  </div>
-
-                  <p>
-                    <span className="price">
-                      Rp35.000
-                    </span>
-                    <span className="old">
-                      Rp50.000
-                    </span>
-                  </p>
-
-                  <div className="card-actions">
-                    <button
-                      className="btn btn-soft"
-                      onClick={() => {}}
-                    >
-                      Bandingkan
-                    </button>
-                    <button
-                      className="btn btn-primary"
-                      onClick={() => {}}
-                    >
-                      Beli
-                    </button>
-                  </div>
-                </div>
-              </article>
-
-              {/* Product 3: Duolingo Super */}
-              <article className="card">
-                <Link href="/produk/3">
-                  <div className="app-cover">
-                    <span>🦉</span>
-                    <span className="stock">
-                      Sisa 5
-                    </span>
-                  </div>
-                </Link>
-
-                <div className="card-body">
-                  <div
-                    className="muted"
-                    style={{ fontSize: '12px' }}
-                  >
-                    Education
-                  </div>
-
-                  <p className="card-title">
-                    Duolingo Super
-                  </p>
-
-                  <div className="rating">
-                    ★ 4.8
-                    <span className="muted">
-                      · 30 hari
-                    </span>
-                  </div>
-
-                  <p>
-                    <span className="price">
-                      Rp39.000
-                    </span>
-                    <span className="old">
-                      Rp55.000
-                    </span>
-                  </p>
-
-                  <div className="card-actions">
-                    <button
-                      className="btn btn-soft"
-                      onClick={() => {}}
-                    >
-                      Bandingkan
-                    </button>
-                    <button
-                      className="btn btn-primary"
-                      onClick={() => {}}
-                    >
-                      Beli
-                    </button>
-                  </div>
-                </div>
-              </article>
-
-              {/* Product 4: Zoom Pro */}
-              <article className="card">
-                <Link href="/produk/4">
-                  <div className="app-cover">
-                    <span>📹</span>
-                    <span className="stock">
-                      Sisa 5
-                    </span>
-                  </div>
-                </Link>
-
-                <div className="card-body">
-                  <div
-                    className="muted"
-                    style={{ fontSize: '12px' }}
-                  >
-                    Produktivitas
-                  </div>
-
-                  <p className="card-title">
-                    Zoom Pro
-                  </p>
-
-                  <div className="rating">
-                    ★ 4.7
-                    <span className="muted">
-                      · 30 hari
-                    </span>
-                  </div>
-
-                  <p>
-                    <span className="price">
-                      Rp52.000
-                    </span>
-                    <span className="old">
-                      Rp70.000
-                    </span>
-                  </p>
-
-                  <div className="card-actions">
-                    <button
-                      className="btn btn-soft"
-                      onClick={() => {}}
-                    >
-                      Bandingkan
-                    </button>
-                    <button
-                      className="btn btn-primary"
-                      onClick={() => {}}
-                    >
-                      Beli
-                    </button>
-                  </div>
-                </div>
-              </article>
+              )}
 
             </div>
 
