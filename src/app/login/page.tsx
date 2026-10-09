@@ -82,7 +82,7 @@ export default function Login() {
           ================================== */}
 
           <div className="auth-logo">
-            pri<span>mogo</span>.id
+            pre<span>migo</span>.id
           </div>
 
 
