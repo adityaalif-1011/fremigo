@@ -3,9 +3,25 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import Script from 'next/script';
 import { createClient } from '@/lib/supabase/client';
-import { createPurchase } from '@/app/actions/checkout';
+import { createMidtransTransaction } from '@/app/actions/checkout';
 import '@/styles/checkout.css';
+
+type SnapCallbacks = {
+  onSuccess?: () => void;
+  onPending?: () => void;
+  onError?: () => void;
+  onClose?: () => void;
+};
+
+declare global {
+  interface Window {
+    snap: {
+      pay: (token: string, callbacks: SnapCallbacks) => void;
+    };
+  }
+}
 
 type CartProduct = {
   id: number;
@@ -26,41 +42,84 @@ const rupiah = (n: number) =>
 export default function Checkout() {
   const router = useRouter();
 
-  const [products, setProducts] = useState<CartProduct[]>([]);
+  const [product, setProduct] = useState<CartProduct | null>(null);
+  const [nama, setNama] = useState('');
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
-      let ids: number[] = [];
+      const supabase = createClient();
+
+      // Profil user untuk field Data Pembelian
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        const fallbackName = user.email?.split('@')[0] ?? 'User';
+
+        setEmail(user.email ?? '');
+        // Fallback langsung agar input tidak stuck "Memuat..."
+        setNama(fallbackName);
+
+        try {
+          const profileQuery = supabase
+            .from('profiles')
+            .select('username')
+            .eq('id', user.id)
+            .single();
+
+          // Batas waktu: jika terlalu lama, pakai fallback
+          const timeout = new Promise<null>((resolve) =>
+            setTimeout(() => resolve(null), 5000)
+          );
+
+          const result = await Promise.race([profileQuery, timeout]);
+          const username = result?.data?.username;
+
+          if (username) {
+            setNama(username);
+          }
+        } catch {
+          // Profile gagal diambil -> fallback sudah terpasang
+        }
+      } else {
+        setNama('User');
+      }
+
+      // Produk dari keranjang (hanya 1 produk)
+      let firstId: number | null = null;
 
       try {
         const raw = JSON.parse(localStorage.getItem('cart') || '[]');
         if (Array.isArray(raw)) {
-          ids = raw
-            .map((value) => Number(value))
-            .filter((n) => Number.isFinite(n) && n > 0);
+          firstId =
+            raw
+              .map((value) => Number(value))
+              .find((n) => Number.isFinite(n) && n > 0) ?? null;
         }
       } catch {
-        ids = [];
+        firstId = null;
       }
 
-      if (ids.length === 0) {
+      if (firstId === null) {
         setLoading(false);
         return;
       }
 
-      const supabase = createClient();
       const { data, error: fetchError } = await supabase
         .from('products')
         .select('id, name, icon, price, seller, duration')
-        .in('id', ids);
+        .eq('id', firstId)
+        .single();
 
       if (fetchError) {
         setError(fetchError.message ?? 'Gagal memuat keranjang.');
       } else if (data) {
-        setProducts(data as CartProduct[]);
+        setProduct(data as CartProduct);
       }
 
       setLoading(false);
@@ -70,29 +129,79 @@ export default function Checkout() {
   }, []);
 
   const handlePay = async () => {
-    if (products.length === 0 || paying) return;
+    if (!product || paying) return;
 
     setPaying(true);
     setError(null);
 
-    for (const product of products) {
-      const res = await createPurchase(product.id);
-
-      if (res.error) {
-        setError(res.error);
-        setPaying(false);
-        return;
-      }
+    // Pastikan Midtrans Snap sudah dimuat
+    if (typeof window.snap === 'undefined') {
+      setError(
+        'Halaman pembayaran Midtrans belum siap. Muat ulang halaman dan coba lagi.'
+      );
+      setPaying(false);
+      return;
     }
 
-    localStorage.removeItem('cart');
-    router.push('/riwayat');
-  };
+    let res: Awaited<ReturnType<typeof createMidtransTransaction>>;
 
-  const total = products.reduce((sum, p) => sum + p.price, 0);
+    try {
+      res = await createMidtransTransaction(product.id);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Terjadi kesalahan. Coba lagi.'
+      );
+      setPaying(false);
+      return;
+    }
+
+    if (res.error) {
+      // Tampilkan pesan error asli dari server
+      setError(res.error);
+      setPaying(false);
+      return;
+    }
+
+    if (!res.token) {
+      setError('Gagal membuat transaksi pembayaran.');
+      setPaying(false);
+      return;
+    }
+
+    window.snap.pay(res.token, {
+      onSuccess: () => {
+        localStorage.removeItem('cart');
+        router.push('/riwayat');
+      },
+      onPending: () => {
+        localStorage.removeItem('cart');
+        router.push('/riwayat?status=pending');
+      },
+      onError: () => {
+        setError('Pembayaran gagal. Silakan coba lagi.');
+        setPaying(false);
+      },
+      onClose: () => {
+        setPaying(false);
+      },
+    });
+  };
 
   return (
     <>
+
+      {/* =================================
+           MIDTRANS SNAP
+      ================================== */}
+
+      <Script
+        src="https://app.sandbox.midtrans.com/snap/snap.js"
+        data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
+        strategy="afterInteractive"
+      />
+
       {/* =================================
            HEADER / TOPBAR
       ================================== */}
@@ -167,8 +276,9 @@ export default function Checkout() {
                 </label>
 
                 <input
-                  defaultValue="Rosa"
-                  placeholder="Nama lengkap"
+                  value={nama}
+                  readOnly
+                  placeholder="Nama"
                 />
 
               </div>
@@ -183,48 +293,22 @@ export default function Checkout() {
 
                 <input
                   type="email"
-                  defaultValue="rosa@example.com"
+                  value={email}
+                  readOnly
+                  placeholder="email@contoh.com"
                 />
 
               </div>
 
 
-              {/* Metode Pembayaran */}
-              <div className="field">
-
-                <label>
-                  Metode Pembayaran
-                </label>
-
-
-                {/* E-Wallet */}
-                <div className="pay-option selected">
-                  💳 E-Wallet
-                </div>
-
-
-                {/* Virtual Account */}
-                <div className="pay-option">
-                  🏦 Virtual Account
-                </div>
-
-
-                {/* QRIS */}
-                <div className="pay-option">
-                  📱 QRIS
-                </div>
-
-              </div>
-
-
-              {/* Notice */}
-              <div className="notice">
-
-                🔒 Transaksi demo.
-                Sistem nyata perlu payment gateway
-                dan verifikasi keamanan.
-
-              </div>
+              {/* Info pembayaran */}
+              <p
+                className="muted"
+                style={{ marginTop: 14 }}
+              >
+                Metode pembayaran (e-wallet, virtual account, QRIS, dll.)
+                dipilih langsung di popup Midtrans saat menekan tombol bayar.
+              </p>
 
             </section>
 
@@ -246,7 +330,7 @@ export default function Checkout() {
                   <p className="muted">
                     Memuat...
                   </p>
-                ) : products.length === 0 ? (
+                ) : !product ? (
                   <div className="empty" style={{ padding: '30px 10px' }}>
                     Keranjang kosong.
 
@@ -258,17 +342,15 @@ export default function Checkout() {
                   </div>
                 ) : (
                   <>
-                    {products.map((p) => (
-                      <div key={p.id} className="row">
-                        <span>
-                          {p.icon} {p.name}
-                        </span>
-                        <b>{rupiah(p.price)}</b>
-                      </div>
-                    ))}
+                    <div className="row">
+                      <span>
+                        {product.icon} {product.name}
+                      </span>
+                      <b>{rupiah(product.price)}</b>
+                    </div>
 
                     <p className="muted">
-                      Paket {products[0].duration} · Seller {products[0].seller}
+                      Paket {product.duration} · Seller {product.seller}
                     </p>
 
                     <hr
@@ -281,26 +363,12 @@ export default function Checkout() {
                     <div className="row">
                       <b>Total</b>
                       <strong className="price">
-                        {rupiah(total)}
+                        {rupiah(product.price)}
                       </strong>
                     </div>
                   </>
                 )}
               </div>
-
-
-              {/* Error */}
-              {error && (
-                <p
-                  style={{
-                    color: '#d9534f',
-                    textAlign: 'center',
-                    marginTop: 14,
-                  }}
-                >
-                  {error}
-                </p>
-              )}
 
 
               {/* Tombol Pembayaran */}
@@ -309,10 +377,26 @@ export default function Checkout() {
                 className="btn btn-primary"
                 style={{ width: '100%', marginTop: '18px' }}
                 onClick={handlePay}
-                disabled={loading || paying || products.length === 0}
+                disabled={loading || paying || !product}
               >
                 {paying ? 'Memproses...' : 'Bayar Sekarang'}
               </button>
+
+
+              {/* Error, tepat di bawah tombol */}
+              {error && (
+                <p
+                  role="alert"
+                  style={{
+                    color: '#d9534f',
+                    textAlign: 'center',
+                    marginTop: 12,
+                    fontWeight: 600,
+                  }}
+                >
+                  {error}
+                </p>
+              )}
 
             </aside>
 

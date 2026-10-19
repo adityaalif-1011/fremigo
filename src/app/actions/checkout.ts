@@ -1,9 +1,16 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import midtransClient from 'midtrans-client';
 import { createClient } from '@/lib/supabase/server';
 
-export async function createPurchase(productId: number) {
+type MidtransResult = {
+  token?: string;
+  error?: string;
+};
+
+export async function createMidtransTransaction(
+  productId: number
+): Promise<MidtransResult> {
   const supabase = await createClient();
 
   const {
@@ -16,7 +23,7 @@ export async function createPurchase(productId: number) {
 
   const { data: product, error: productError } = await supabase
     .from('products')
-    .select('id, price')
+    .select('id, name, price')
     .eq('id', productId)
     .single();
 
@@ -24,25 +31,62 @@ export async function createPurchase(productId: number) {
     return { error: 'Produk tidak ditemukan.' };
   }
 
-  const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + 30);
+  const orderId = `ORDER-${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(2, 7)
+    .toUpperCase()}`;
+
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
   const { error: insertError } = await supabase.from('purchases').insert({
     user_id: user.id,
     product_id: product.id,
     price_paid: product.price,
-    purchased_at: new Date().toISOString(),
+    order_id: orderId,
+    status: 'pending',
     expires_at: expiresAt.toISOString(),
-    status: 'active',
+    purchased_at: new Date().toISOString(),
   });
 
   if (insertError) {
-    return { error: 'Gagal menyimpan pembelian. Coba lagi.' };
+    console.error('SUPABASE INSERT ERROR:', insertError);
+    return { error: insertError.message || 'Gagal menyimpan pembelian' };
   }
 
-  revalidatePath('/riwayat');
-  revalidatePath('/reward');
-  revalidatePath('/notifications');
+  try {
+    const snap = new midtransClient.Snap({
+      isProduction: false,
+      serverKey: process.env.MIDTRANS_SERVER_KEY!,
+      clientKey: process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY!,
+    });
 
-  return { success: true };
+    const parameter = {
+      transaction_details: {
+        order_id: orderId,
+        gross_amount: product.price,
+      },
+      item_details: [
+        {
+          id: product.id,
+          price: product.price,
+          quantity: 1,
+          name: product.name,
+        },
+      ],
+    };
+
+    const transaction = await snap.createTransaction(parameter);
+
+    return { token: transaction.token };
+  } catch (error) {
+    // Transaksi gagal dibuat di Midtrans -> hapus purchase pending
+    await supabase.from('purchases').delete().eq('order_id', orderId);
+
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Gagal membuat transaksi. Coba lagi.',
+    };
+  }
 }
