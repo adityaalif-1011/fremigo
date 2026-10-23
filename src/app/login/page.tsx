@@ -45,6 +45,27 @@ export default function Login() {
     }
   };
 
+  const redirectByRole = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (profile?.role === 'admin') {
+        router.push('/admin');
+        router.refresh();
+        return;
+      }
+    }
+
+    router.push('/');
+    router.refresh();
+  };
+
   const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
@@ -58,8 +79,7 @@ export default function Login() {
     if (error) {
       setError(error.message);
     } else {
-      router.push('/');
-      router.refresh();
+      await redirectByRole();
     }
 
     setLoading(false);

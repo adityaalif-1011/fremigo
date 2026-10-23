@@ -31,12 +31,28 @@ export async function updateSession(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   const path = request.nextUrl.pathname
-  const protectedRoutes = ['/checkout', '/riwayat', '/account']
+  const protectedRoutes = ['/checkout', '/riwayat', '/account', '/admin']
 
   if (!user && protectedRoutes.some(p => path.startsWith(p))) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
+  }
+
+  const isAdminRoute = path === '/admin' || path.startsWith('/admin/')
+
+  if (user && isAdminRoute) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (profile?.role !== 'admin') {
+      const url = request.nextUrl.clone()
+      url.pathname = '/'
+      return NextResponse.redirect(url)
+    }
   }
 
   if (user && path === '/login') {
