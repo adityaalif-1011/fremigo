@@ -23,13 +23,9 @@
 
 
 .points {
-    background: linear-gradient(
-        135deg,
-        #e8f7ef,
-        #fff0f4
-    );
-
-    border-radius: 24px;
+    background: var(--green-soft);
+    border: 1px solid #d9efe4;
+    border-radius: 16px;
     padding: 28px;
 }
 

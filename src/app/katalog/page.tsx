@@ -3,7 +3,10 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
+import { BuyerSidebar, BuyerTopbar } from '@/components/BuyerChrome';
+import PageTransition from '@/components/PageTransition';
 import '@/styles/catalog.css';
 
 type Product = {
@@ -26,6 +29,22 @@ const rupiah = (n: number) =>
     currency: 'IDR',
     maximumFractionDigits: 0,
   }).format(n);
+
+const gridContainer = {
+  hidden: {},
+  show: {
+    transition: { staggerChildren: 0.06 },
+  },
+} as const;
+
+const gridItem = {
+  hidden: { opacity: 0, y: 12 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.35, ease: 'easeOut' as const },
+  },
+};
 
 export default function Katalog() {
   const router = useRouter();
@@ -64,54 +83,13 @@ export default function Katalog() {
            HEADER / TOPBAR
       ================================== */}
 
-      <header className="topbar">
-
-        {/* Logo */}
-        <Link className="logo" href="/">
-          pre<span>migo</span>.id
-        </Link>
-
-
-        {/* Search */}
-        <div className="search">
-
-          <span className="search-icon">
-            ⌕
-          </span>
-
-          <input
-            id="q"
-            placeholder="Cari nama aplikasi..."
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-          />
-
-        </div>
-
-
-        {/* Top Actions */}
-        <div className="top-actions">
-
-          {/* Tombol Keranjang */}
-          <button
-            className="icon-btn"
-            onClick={() => router.push('/checkout')}
-          >
-            🛒
-          </button>
-
-
-          {/* Tombol Login */}
-          <button
-            className="icon-btn"
-            onClick={() => router.push('/account')}
-          >
-            👤
-          </button>
-
-        </div>
-
-      </header>
+      <BuyerTopbar
+        search={{
+          placeholder: 'Cari nama aplikasi...',
+          value: q,
+          onChange: setQ,
+        }}
+      />
 
 
       {/* =================================
@@ -125,69 +103,7 @@ export default function Katalog() {
              SIDEBAR
         ================================== */}
 
-        <aside className="sidebar">
-
-          {/* Beranda */}
-          <Link
-            className="side-link"
-            href="/"
-          >
-            🏠
-            <span>
-              Beranda
-            </span>
-          </Link>
-
-
-          {/* Katalog */}
-          <Link
-            className="side-link active"
-            href="/katalog"
-          >
-            🛍️
-            <span>
-              Katalog
-            </span>
-          </Link>
-
-
-          {/* Riwayat */}
-          <Link
-            className="side-link"
-            href="/riwayat"
-          >
-            🧾
-            <span>
-              Riwayat
-            </span>
-          </Link>
-
-
-          {/* Notifikasi */}
-          <Link
-            className="side-link"
-            href="/notifications"
-          >
-            🔔
-            <span>
-              Notifikasi
-            </span>
-          </Link>
-
-
-          {/* Poin Reward */}
-          <Link
-            className="side-link"
-            href="/reward"
-          >
-            🎁
-            <span>
-              Poin Reward
-            </span>
-          </Link>
-
-
-        </aside>
+        <BuyerSidebar />
 
 
         {/* =================================
@@ -195,6 +111,8 @@ export default function Katalog() {
         ================================== */}
 
         <main className="main">
+
+          <PageTransition>
 
           <div className="container">
 
@@ -357,12 +275,20 @@ export default function Katalog() {
                   Belum ada produk yang cocok dengan filter.
                 </p>
               ) : (
-                <div className="grid">
+                <motion.div
+                  className="grid"
+                  variants={gridContainer}
+                  initial="hidden"
+                  animate="show"
+                >
 
                   {filtered.map((p) => (
-                    <article
+                    <motion.article
                       className="card"
                       key={p.id}
+                      variants={gridItem}
+                      whileHover={{ y: -4, boxShadow: '0 10px 25px rgba(0,0,0,0.05)' }}
+                      transition={{ duration: 0.2 }}
                     >
                       <Link href={`/produk/${p.id}`}>
                         <div className="app-cover">
@@ -422,15 +348,17 @@ export default function Katalog() {
                           </button>
                         </div>
                       </div>
-                    </article>
+                    </motion.article>
                   ))}
 
-                </div>
+                </motion.div>
               )}
 
             </div>
 
           </div>
+
+          </PageTransition>
 
         </main>
 

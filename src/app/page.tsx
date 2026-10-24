@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { BuyerIcons, BuyerSidebar, BuyerTopbar } from '@/components/BuyerChrome';
+import PageTransition from '@/components/PageTransition';
 import '@/styles/home.css';
 
 export default function Home() {
@@ -11,48 +13,12 @@ export default function Home() {
       {/* ==============================
            HEADER / TOPBAR
       =============================== */}
-      <header className="topbar">
-
-        <Link className="logo" href="/">
-          pre<span>migo</span>.id
-        </Link>
-
-        <div className="search">
-          <span className="search-icon">⌕</span>
-
-          <input
-            placeholder="Cari aplikasi, paket, atau transaksi..."
-            onClick={() => router.push('/katalog')}
-          />
-        </div>
-
-        <div className="top-actions">
-
-          <button
-            className="icon-btn badge"
-            data-badge="2"
-            onClick={() => router.push('/notifications')}
-          >
-            🔔
-          </button>
-
-          <button
-            className="icon-btn"
-            onClick={() => router.push('/checkout')}
-          >
-            🛒
-          </button>
-
-          <button
-            className="icon-btn"
-            onClick={() => router.push('/account')}
-          >
-            👤
-          </button>
-
-        </div>
-
-      </header>
+      <BuyerTopbar
+        search={{
+          placeholder: 'Cari aplikasi, paket, atau transaksi...',
+          onClick: () => router.push('/katalog'),
+        }}
+      />
 
 
       {/* ==============================
@@ -64,55 +30,15 @@ export default function Home() {
         {/* ==============================
              SIDEBAR
         =============================== */}
-        <aside className="sidebar">
-
-          <Link
-            className="side-link active"
-            href="/"
-          >
-            🏠
-            <span>Beranda</span>
-          </Link>
-
-          <Link
-            className="side-link"
-            href="/katalog"
-          >
-            🛍️
-            <span>Katalog</span>
-          </Link>
-
-          <Link
-            className="side-link"
-            href="/riwayat"
-          >
-            🧾
-            <span>Riwayat</span>
-          </Link>
-
-          <Link
-            className="side-link"
-            href="/notifications"
-          >
-            🔔
-            <span>Notifikasi</span>
-          </Link>
-
-          <Link
-            className="side-link"
-            href="/reward"
-          >
-            🎁
-            <span>Poin Reward</span>
-          </Link>
-
-        </aside>
+        <BuyerSidebar />
 
 
         {/* ==============================
              MAIN CONTENT
         =============================== */}
         <main className="main">
+
+          <PageTransition>
 
           <div className="container">
 
@@ -159,7 +85,20 @@ export default function Home() {
               <div className="hero-art">
 
                 <div className="orb">
-                  📱
+                  <svg
+                    width="96"
+                    height="96"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <rect x="7" y="2" width="10" height="20" rx="2" />
+                    <path d="M11 18h2" />
+                  </svg>
                 </div>
 
               </div>
@@ -179,7 +118,7 @@ export default function Home() {
                 <div className="feature">
 
                   <div className="ico">
-                    🔎
+                    {BuyerIcons.search}
                   </div>
 
                   <h3>
@@ -198,7 +137,7 @@ export default function Home() {
                 <div className="feature">
 
                   <div className="ico">
-                    ⚖️
+                    {BuyerIcons.scale}
                   </div>
 
                   <h3>
@@ -217,7 +156,7 @@ export default function Home() {
                 <div className="feature">
 
                   <div className="ico">
-                    🔔
+                    {BuyerIcons.bell}
                   </div>
 
                   <h3>
@@ -319,6 +258,8 @@ export default function Home() {
             </footer>
 
           </div>
+
+          </PageTransition>
 
         </main>
 

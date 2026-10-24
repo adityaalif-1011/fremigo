@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { BuyerSidebar, BuyerTopbar } from '@/components/BuyerChrome';
+import PageTransition from '@/components/PageTransition';
 import '@/styles/account.css';
 
 type ProductInfo = {
@@ -88,91 +90,15 @@ export default function Riwayat() {
 
   return (
     <>
-      <header className="topbar">
-
-        <Link className="logo" href="/">
-          pre<span>migo</span>.id
-        </Link>
-
-        <div className="top-actions">
-
-          <button
-            className="icon-btn"
-            onClick={() => router.push('/notifications')}
-          >
-            🔔
-          </button>
-
-          <button
-            className="icon-btn"
-            onClick={() => router.push('/')}
-          >
-            🏠
-          </button>
-
-        </div>
-
-      </header>
-
+      <BuyerTopbar />
 
       <div className="layout">
 
-        <aside className="sidebar">
-
-          <Link
-            className="side-link"
-            href="/"
-          >
-            🏠
-            <span>
-              Beranda
-            </span>
-          </Link>
-
-          <Link
-            className="side-link"
-            href="/katalog"
-          >
-            🛍️
-            <span>
-              Katalog
-            </span>
-          </Link>
-
-          <Link
-            className="side-link active"
-            href="/riwayat"
-          >
-            🧾
-            <span>
-              Riwayat
-            </span>
-          </Link>
-
-          <Link
-            className="side-link"
-            href="/notifications"
-          >
-            🔔
-            <span>
-              Notifikasi
-            </span>
-          </Link>
-
-          <Link
-            className="side-link"
-            href="/reward"
-          >
-            🎁
-            <span>
-              Poin Reward
-            </span>
-          </Link>
-
-        </aside>
-
+        <BuyerSidebar />
 
         <main className="main">
+
+          <PageTransition>
 
           <div className="container">
 
@@ -345,13 +271,37 @@ export default function Riwayat() {
 
             <section className="section">
 
-              <div className="notice">
-                🔔 Sistem akan mengirim pengingat H-3 sebelum masa premium berakhir.
+              <div
+                className="notice"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                }}
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                  style={{ flexShrink: 0 }}
+                >
+                  <path d="M6 9a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6" />
+                  <path d="M10 20a2.5 2.5 0 0 0 4 0" />
+                </svg>
+                Sistem akan mengirim pengingat H-3 sebelum masa premium berakhir.
               </div>
 
             </section>
 
           </div>
+
+          </PageTransition>
 
         </main>
 

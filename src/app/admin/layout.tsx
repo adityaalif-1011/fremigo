@@ -1,8 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import PageTransition from '@/components/PageTransition';
 
 type AdminMenuItem = {
   href: string;
@@ -68,6 +70,14 @@ const menu: AdminMenuItem[] = [
 
 export default function AdminLayout({ children }: LayoutProps<'/admin'>) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push('/login');
+    router.refresh();
+  };
 
   return (
     <div className="app">
@@ -96,9 +106,28 @@ export default function AdminLayout({ children }: LayoutProps<'/admin'>) {
 
         <div style={{ flex: 1 }} />
 
-        <Link className="btn btn-outline" href="/">
-          Beranda
-        </Link>
+        <button
+          className="btn btn-outline"
+          onClick={handleLogout}
+          style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <path d="m16 17 5-5-5-5" />
+            <path d="M21 12H9" />
+          </svg>
+          Logout
+        </button>
 
       </header>
 
@@ -140,7 +169,9 @@ export default function AdminLayout({ children }: LayoutProps<'/admin'>) {
         =============================== */}
         <main className="main">
           <div className="container">
-            {children}
+            <PageTransition>
+              {children}
+            </PageTransition>
           </div>
         </main>
 

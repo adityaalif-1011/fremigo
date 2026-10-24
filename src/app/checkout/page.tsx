@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Script from 'next/script';
 import { createClient } from '@/lib/supabase/client';
 import { createMidtransTransaction } from '@/app/actions/checkout';
+import { BuyerTopbar } from '@/components/BuyerChrome';
 import '@/styles/checkout.css';
 
 type SnapCallbacks = {
@@ -206,27 +207,7 @@ export default function Checkout() {
            HEADER / TOPBAR
       ================================== */}
 
-      <header className="topbar">
-
-        {/* Logo */}
-        <Link className="logo" href="/">
-          pre<span>migo</span>.id
-        </Link>
-
-
-        {/* Top Actions */}
-        <div className="top-actions">
-
-          <button
-            className="icon-btn"
-            onClick={() => router.push('/katalog')}
-          >
-            🛍️
-          </button>
-
-        </div>
-
-      </header>
+      <BuyerTopbar />
 
 
       {/* =================================

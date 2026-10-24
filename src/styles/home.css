@@ -9,12 +9,19 @@
     padding: 20px;
     background: #fff;
     border: 1px solid var(--line);
-    border-radius: 18px;
+    border-radius: 16px;
 }
 
 
 .feature .ico {
-    font-size: 28px;
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: var(--green-soft);
+    color: var(--green-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 
@@ -26,7 +33,7 @@
 .promo {
     background: var(--green-dark);
     color: #fff;
-    border-radius: 22px;
+    border-radius: 16px;
     padding: 22px;
     display: flex;
     justify-content: space-between;

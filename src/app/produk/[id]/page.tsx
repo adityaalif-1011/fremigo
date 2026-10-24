@@ -3,6 +3,7 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
+import { BuyerTopbar } from '@/components/BuyerChrome';
 import '@/styles/detail.css';
 
 function BuyButton() {
@@ -33,42 +34,12 @@ export default function ProdukDetail() {
            HEADER / TOPBAR
       ================================== */}
 
-      <header className="topbar">
-
-        {/* Logo */}
-        <Link className="logo" href="/">
-          pre<span>migo</span>.id
-        </Link>
-
-        {/* Search */}
-        <div className="search">
-
-          <span className="search-icon">
-            ⌕
-          </span>
-
-          <input
-            placeholder="Cari aplikasi..."
-            onClick={() => router.push('/katalog')}
-          />
-
-        </div>
-
-
-        {/* Top Actions */}
-        <div className="top-actions">
-
-          {/* Tombol Keranjang */}
-          <button
-            className="icon-btn"
-            onClick={() => router.push('/checkout')}
-          >
-            🛒
-          </button>
-
-        </div>
-
-      </header>
+      <BuyerTopbar
+        search={{
+          placeholder: 'Cari aplikasi...',
+          onClick: () => router.push('/katalog'),
+        }}
+      />
 
 
       {/* =================================
@@ -204,9 +175,29 @@ export default function ProdukDetail() {
 
               <div
                 className="notice"
-                style={{ marginTop: '16px' }}
+                style={{
+                  marginTop: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                }}
               >
-                🔔 Pengingat otomatis dikirim H-3 sebelum masa
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                  style={{ flexShrink: 0 }}
+                >
+                  <path d="M6 9a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6" />
+                  <path d="M10 20a2.5 2.5 0 0 0 4 0" />
+                </svg>
+                Pengingat otomatis dikirim H-3 sebelum masa
                 premium berakhir.
               </div>
             </div>

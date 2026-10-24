@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { BuyerSidebar, BuyerTopbar } from '@/components/BuyerChrome';
 import '@/styles/home.css';
 
 export default function Account() {
@@ -53,48 +53,12 @@ export default function Account() {
       {/* ==============================
            HEADER / TOPBAR
       =============================== */}
-      <header className="topbar">
-
-        <Link className="logo" href="/">
-          pre<span>migo</span>.id
-        </Link>
-
-        <div className="search">
-          <span className="search-icon">⌕</span>
-
-          <input
-            placeholder="Cari aplikasi, paket, atau transaksi..."
-            onClick={() => router.push('/katalog')}
-          />
-        </div>
-
-        <div className="top-actions">
-
-          <button
-            className="icon-btn badge"
-            data-badge="2"
-            onClick={() => router.push('/notifications')}
-          >
-            🔔
-          </button>
-
-          <button
-            className="icon-btn"
-            onClick={() => router.push('/checkout')}
-          >
-            🛒
-          </button>
-
-          <button
-            className="icon-btn"
-            onClick={() => router.push('/account')}
-          >
-            👤
-          </button>
-
-        </div>
-
-      </header>
+      <BuyerTopbar
+        search={{
+          placeholder: 'Cari aplikasi, paket, atau transaksi...',
+          onClick: () => router.push('/katalog'),
+        }}
+      />
 
 
       {/* ==============================
@@ -106,49 +70,7 @@ export default function Account() {
         {/* ==============================
              SIDEBAR
         =============================== */}
-        <aside className="sidebar">
-
-          <Link
-            className="side-link"
-            href="/"
-          >
-            🏠
-            <span>Beranda</span>
-          </Link>
-
-          <Link
-            className="side-link"
-            href="/katalog"
-          >
-            🛍️
-            <span>Katalog</span>
-          </Link>
-
-          <Link
-            className="side-link"
-            href="/riwayat"
-          >
-            🧾
-            <span>Riwayat</span>
-          </Link>
-
-          <Link
-            className="side-link"
-            href="/notifications"
-          >
-            🔔
-            <span>Notifikasi</span>
-          </Link>
-
-          <Link
-            className="side-link"
-            href="/reward"
-          >
-            🎁
-            <span>Poin Reward</span>
-          </Link>
-
-        </aside>
+        <BuyerSidebar />
 
 
         {/* ==============================
@@ -204,10 +126,23 @@ export default function Account() {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: 32,
+                        color: 'var(--pink-dark)',
                       }}
                     >
-                      👤
+                      <svg
+                        width="34"
+                        height="34"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
+                        <circle cx="12" cy="8" r="4" />
+                        <path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5" />
+                      </svg>
                     </div>
 
 
