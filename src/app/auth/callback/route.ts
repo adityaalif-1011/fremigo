@@ -19,7 +19,9 @@ export async function GET(request: Request) {
           .eq('id', user.id)
           .maybeSingle()
 
-        if (profile?.role === 'admin') {
+        const role = profile?.role?.toLowerCase().trim()
+
+        if (role === 'admin') {
           return NextResponse.redirect(`${origin}/admin`)
         }
       }

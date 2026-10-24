@@ -48,22 +48,38 @@ export default function Login() {
   const redirectByRole = async () => {
     const { data: { user } } = await supabase.auth.getUser();
 
-    if (user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .maybeSingle();
+    let role: string | undefined;
 
-      if (profile?.role === 'admin') {
-        router.push('/admin');
-        router.refresh();
-        return;
+    if (user) {
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+
+        if (error) {
+          console.error('PROFILE_FETCH_ERROR:', error.message);
+          throw error;
+        }
+
+        role = profile?.role?.toLowerCase().trim();
+      } catch (err: any) {
+        console.error('LOGIN_ROLE_FETCH_FAILED:', err.message || err);
+        role = undefined;
       }
     }
 
-    router.push('/');
+    console.log('LOGIN_ROLE_CHECK:', user?.id, role);
+
+    // Refresh FIRST so middleware sees the new session cookie, then push.
     router.refresh();
+
+    if (role === 'admin') {
+      router.push('/admin');
+    } else {
+      router.push('/');
+    }
   };
 
   const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
