@@ -246,17 +246,6 @@ export default function Home() {
             </section>
 
 
-            {/* ==============================
-                 FOOTER
-            =============================== */}
-            <footer className="footer">
-
-              © 2026 Primogo.id ·
-              Marketplace aplikasi premium ·
-              Demo UI/UX
-
-            </footer>
-
           </div>
 
           </PageTransition>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { BuyerSidebar, BuyerTopbar } from '@/components/BuyerChrome';
@@ -105,121 +106,228 @@ export default function Account() {
 
               {loading ? (
 
-                <div className="card">
-                  <div className="card-body">
+                <div style={{ maxWidth: 800 }}>
+                  <div className="profile-card">
                     Loading...
                   </div>
                 </div>
 
               ) : (
 
-                <div className="card">
-                  <div className="card-body">
+                <div style={{ maxWidth: 800 }}>
 
-                    {/* Avatar */}
+
+                  {/* =================================
+                       TWO-COLUMN PROFILE GRID
+                  ================================== */}
+                  <div className="profile-grid">
+
+
+                    {/* ==============================
+                         LEFT: IDENTITY
+                    =============================== */}
                     <div
-                      style={{
-                        width: 72,
-                        height: 72,
-                        borderRadius: '50%',
-                        background: 'var(--pink-soft)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: 'var(--pink-dark)',
-                      }}
-                    >
-                      <svg
-                        width="34"
-                        height="34"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden="true"
-                      >
-                        <circle cx="12" cy="8" r="4" />
-                        <path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5" />
-                      </svg>
-                    </div>
-
-
-                    {/* Identity */}
-                    <h3 style={{ margin: '14px 0 2px' }}>
-                      {username}
-                    </h3>
-
-                    <div className="muted">
-                      {email}
-                    </div>
-
-
-                    {/* Divider */}
-                    <hr
-                      style={{
-                        border: 0,
-                        borderTop: '1px solid #eee',
-                        margin: '16px 0',
-                      }}
-                    />
-
-
-                    {/* Details */}
-                    <div
+                      className="profile-card"
                       style={{
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: 12,
                       }}
                     >
 
-                      <div className="row">
-                        <span className="muted">
-                          Poin Reward
-                        </span>
-                        <span>
-                          {points}
-                        </span>
+                      {/* Avatar */}
+                      <div
+                        style={{
+                          width: 80,
+                          height: 80,
+                          borderRadius: '50%',
+                          background: 'var(--pink-soft)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'var(--pink-dark)',
+                          margin: '0 auto',
+                        }}
+                      >
+                        <svg
+                          width="38"
+                          height="38"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden="true"
+                        >
+                          <circle cx="12" cy="8" r="4" />
+                          <path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5" />
+                        </svg>
                       </div>
 
-                      <div className="row">
-                        <span className="muted">
-                          Status
-                        </span>
-                        <span>
-                          Member Aktif
-                        </span>
+
+                      {/* Identity */}
+                      <h3
+                        style={{
+                          margin: '14px 0 2px',
+                          fontSize: 20,
+                          textAlign: 'center',
+                        }}
+                      >
+                        {username}
+                      </h3>
+
+                      <div
+                        className="muted"
+                        style={{ textAlign: 'center', fontSize: 14 }}
+                      >
+                        {email}
                       </div>
 
+
+                      {/* Divider */}
+                      <hr
+                        style={{
+                          border: 0,
+                          borderTop: '1px solid var(--line)',
+                          margin: '20px 0',
+                        }}
+                      />
+
+
+                      {/* Logout */}
                       <button
-                        className="btn btn-primary"
+                        className="btn"
                         onClick={handleLogout}
+                        style={{
+                          width: '100%',
+                          background: '#d6455c',
+                          color: '#fff',
+                        }}
                       >
                         Keluar
                       </button>
 
                     </div>
 
+
+                    {/* ==============================
+                         RIGHT: DETAILS
+                    =============================== */}
+                    <div
+                      className="profile-card"
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 20,
+                      }}
+                    >
+
+
+                      {/* ==============================
+                           POIN REWARD
+                      =============================== */}
+                      <div>
+
+                        <div className="muted" style={{ fontSize: 13 }}>
+                          Poin Reward
+                        </div>
+
+                        <div style={{ fontSize: 24, fontWeight: 800, margin: '4px 0' }}>
+                          {points.toLocaleString('id-ID')}
+                        </div>
+
+                        <div className="muted" style={{ fontSize: 13 }}>
+                          Tukarkan poin dengan voucher premium dan reward menarik.
+                        </div>
+
+                      </div>
+
+
+                      {/* Divider */}
+                      <hr
+                        style={{
+                          border: 0,
+                          borderTop: '1px solid var(--line)',
+                          margin: 0,
+                        }}
+                      />
+
+
+                      {/* ==============================
+                           STATUS
+                      =============================== */}
+                      <div>
+
+                        <div className="muted" style={{ fontSize: 13, marginBottom: 8 }}>
+                          Status
+                        </div>
+
+                        <span
+                          style={{
+                            display: 'inline-block',
+                            background: 'var(--green-soft)',
+                            color: 'var(--green-dark)',
+                            padding: '5px 14px',
+                            borderRadius: 999,
+                            fontSize: 13,
+                            fontWeight: 800,
+                          }}
+                        >
+                          Member Aktif
+                        </span>
+
+                      </div>
+
+
+                      {/* Divider */}
+                      <hr
+                        style={{
+                          border: 0,
+                          borderTop: '1px solid var(--line)',
+                          margin: 0,
+                        }}
+                      />
+
+
+                      {/* ==============================
+                           SHORTCUT LINKS
+                      =============================== */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 10,
+                        }}
+                      >
+
+                        <Link
+                          href="/riwayat"
+                          className="btn btn-soft"
+                          style={{ textAlign: 'center' }}
+                        >
+                          Lihat Riwayat Pembelian
+                        </Link>
+
+                        <Link
+                          href="/notifications"
+                          className="btn btn-outline"
+                          style={{ textAlign: 'center' }}
+                        >
+                          Lihat Notifikasi
+                        </Link>
+
+                      </div>
+
+
+                    </div>
+
                   </div>
+
                 </div>
 
               )}
 
             </section>
-
-
-            {/* ==============================
-                 FOOTER
-            =============================== */}
-            <footer className="footer">
-
-              © 2026 Primogo.id ·
-              Marketplace aplikasi premium ·
-              Demo UI/UX
-
-            </footer>
 
           </div>
 

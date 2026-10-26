@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
+import NotificationBell from '@/components/NotificationBell';
 
 /* ==============================
      SHARED SVG ICON STYLING
@@ -105,7 +106,6 @@ const buyerMenu: SidebarItem[] = [
   { href: '/', label: 'Beranda', icon: BuyerIcons.home },
   { href: '/katalog', label: 'Katalog', icon: BuyerIcons.catalog },
   { href: '/riwayat', label: 'Riwayat', icon: BuyerIcons.receipt },
-  { href: '/notifications', label: 'Notifikasi', icon: BuyerIcons.bell },
   { href: '/reward', label: 'Poin Reward', icon: BuyerIcons.gift },
 ];
 
@@ -182,14 +182,7 @@ export function BuyerTopbar({ search }: { search?: SearchConfig }) {
 
       <div className="top-actions">
 
-        <button
-          className="icon-btn badge"
-          data-badge="2"
-          aria-label="Notifikasi"
-          onClick={() => router.push('/notifications')}
-        >
-          {BuyerIcons.bell}
-        </button>
+        <NotificationBell />
 
         <button
           className="icon-btn"
