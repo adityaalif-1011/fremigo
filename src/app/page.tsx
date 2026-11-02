@@ -237,6 +237,7 @@ export default function Home() {
                 <button
                   id="bundleBtn"
                   className="btn"
+                  onClick={() => router.push('/katalog')}
                 >
                   Lihat Paket
                 </button>

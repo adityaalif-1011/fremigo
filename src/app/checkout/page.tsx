@@ -1,28 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import Script from 'next/script';
 import { createClient } from '@/lib/supabase/client';
-import { createMidtransTransaction } from '@/app/actions/checkout';
+import { createManualPurchase } from '@/app/actions/checkout';
 import { BuyerTopbar } from '@/components/BuyerChrome';
 import '@/styles/checkout.css';
-
-type SnapCallbacks = {
-  onSuccess?: () => void;
-  onPending?: () => void;
-  onError?: () => void;
-  onClose?: () => void;
-};
-
-declare global {
-  interface Window {
-    snap: {
-      pay: (token: string, callbacks: SnapCallbacks) => void;
-    };
-  }
-}
 
 type CartProduct = {
   id: number;
@@ -46,9 +31,14 @@ export default function Checkout() {
   const [product, setProduct] = useState<CartProduct | null>(null);
   const [nama, setNama] = useState('');
   const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [paying, setPaying] = useState(false);
+  const [deliveryEmail, setDeliveryEmail] = useState('');
+  const [productLoading, setProductLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Modal pembayaran manual
+  const [showPayModal, setShowPayModal] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -63,6 +53,7 @@ export default function Checkout() {
         const fallbackName = user.email?.split('@')[0] ?? 'User';
 
         setEmail(user.email ?? '');
+        setDeliveryEmail(user.email ?? '');
         // Fallback langsung agar input tidak stuck "Memuat..."
         setNama(fallbackName);
 
@@ -107,7 +98,7 @@ export default function Checkout() {
       }
 
       if (firstId === null) {
-        setLoading(false);
+        setProductLoading(false);
         return;
       }
 
@@ -123,85 +114,90 @@ export default function Checkout() {
         setProduct(data as CartProduct);
       }
 
-      setLoading(false);
+      setProductLoading(false);
     };
 
     load();
   }, []);
 
-  const handlePay = async () => {
-    if (!product || paying) return;
+  const handlePay = () => {
+    if (!product || loading) return;
 
-    setPaying(true);
+    const recipient = deliveryEmail.trim();
+
+    if (!recipient) {
+      setError('Email penerima akun wajib diisi.');
+      return;
+    }
+
+    setError(null);
+    setFile(null);
+    setShowPayModal(true);
+  };
+
+  const handleManualPay = async () => {
+    if (!product || loading) return;
+
+    if (!file) {
+      setError('Bukti transfer wajib diunggah terlebih dahulu.');
+      return;
+    }
+
+    setLoading(true);
     setError(null);
 
-    // Pastikan Midtrans Snap sudah dimuat
-    if (typeof window.snap === 'undefined') {
-      setError(
-        'Halaman pembayaran Midtrans belum siap. Muat ulang halaman dan coba lagi.'
-      );
-      setPaying(false);
-      return;
-    }
-
-    let res: Awaited<ReturnType<typeof createMidtransTransaction>>;
-
     try {
-      res = await createMidtransTransaction(product.id);
+      const supabase = createClient();
+
+      // 1. Upload bukti transfer ke Supabase Storage
+      const path = `proof-${Date.now()}.jpg`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('payment-proofs')
+        .upload(path, file, { upsert: false });
+
+      if (uploadError) {
+        setError(uploadError.message || 'Gagal mengunggah bukti transfer.');
+        setLoading(false);
+        return;
+      }
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('payment-proofs').getPublicUrl(path);
+
+      if (!publicUrl) {
+        setError('Gagal mendapatkan URL bukti transfer.');
+        setLoading(false);
+        return;
+      }
+
+      // 2. Simpan pembelian manual
+      const res = await createManualPurchase(
+        product.id,
+        deliveryEmail.trim(),
+        publicUrl
+      );
+
+      if (res.error) {
+        setError(res.error);
+        setLoading(false);
+        return;
+      }
+
+      // 3. Selesai -> ke riwayat
+      localStorage.removeItem('cart');
+      router.push('/riwayat');
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err.message
-          : 'Terjadi kesalahan. Coba lagi.'
+        err instanceof Error ? err.message : 'Terjadi kesalahan. Coba lagi.'
       );
-      setPaying(false);
-      return;
+      setLoading(false);
     }
-
-    if (res.error) {
-      // Tampilkan pesan error asli dari server
-      setError(res.error);
-      setPaying(false);
-      return;
-    }
-
-    if (!res.token) {
-      setError('Gagal membuat transaksi pembayaran.');
-      setPaying(false);
-      return;
-    }
-
-    window.snap.pay(res.token, {
-      onSuccess: () => {
-        localStorage.removeItem('cart');
-        router.push('/riwayat');
-      },
-      onPending: () => {
-        localStorage.removeItem('cart');
-        router.push('/riwayat?status=pending');
-      },
-      onError: () => {
-        setError('Pembayaran gagal. Silakan coba lagi.');
-        setPaying(false);
-      },
-      onClose: () => {
-        setPaying(false);
-      },
-    });
   };
 
   return (
     <>
-
-      {/* =================================
-           MIDTRANS SNAP
-      ================================== */}
-
-      <Script
-        src="https://app.sandbox.midtrans.com/snap/snap.js"
-        data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
-        strategy="afterInteractive"
-      />
 
       {/* =================================
            HEADER / TOPBAR
@@ -287,8 +283,7 @@ export default function Checkout() {
                 className="muted"
                 style={{ marginTop: 14 }}
               >
-                Metode pembayaran (e-wallet, virtual account, QRIS, dll.)
-                dipilih langsung di popup Midtrans saat menekan tombol bayar.
+                Selesaikan pembayaran untuk melanjutkan
               </p>
 
             </section>
@@ -307,7 +302,7 @@ export default function Checkout() {
 
               {/* Summary diisi dari keranjang */}
               <div id="summary">
-                {loading ? (
+                {productLoading ? (
                   <p className="muted">
                     Memuat...
                   </p>
@@ -352,20 +347,38 @@ export default function Checkout() {
               </div>
 
 
+              {/* Email Penerima Akun */}
+              <div className="field">
+
+                <label htmlFor="delivery-email">
+                  Email Penerima Akun
+                </label>
+
+                <input
+                  id="delivery-email"
+                  type="email"
+                  value={deliveryEmail}
+                  onChange={(e) => setDeliveryEmail(e.target.value)}
+                  placeholder="email@contoh.com"
+                />
+
+              </div>
+
+
               {/* Tombol Pembayaran */}
               <button
                 id="pay"
                 className="btn btn-primary"
                 style={{ width: '100%', marginTop: '18px' }}
                 onClick={handlePay}
-                disabled={loading || paying || !product}
+                disabled={productLoading || loading || !product}
               >
-                {paying ? 'Memproses...' : 'Bayar Sekarang'}
+                Bayar
               </button>
 
 
               {/* Error, tepat di bawah tombol */}
-              {error && (
+              {error && !showPayModal && (
                 <p
                   role="alert"
                   style={{
@@ -387,6 +400,96 @@ export default function Checkout() {
         </div>
 
       </main>
+
+
+      {/* =================================
+           MODAL — PEMBAYARAN MANUAL (QRIS)
+      ================================== */}
+
+      {showPayModal && product && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '20px'
+          }}
+        >
+          <div
+            style={{
+              background: '#fff',
+              borderRadius: '16px',
+              padding: '24px',
+              width: '100%',
+              maxWidth: '400px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+              position: 'relative'
+            }}
+          >
+            {/* Close Button */}
+            <button 
+              onClick={() => setShowPayModal(false)}
+              style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', fontSize: 20 }}
+            >
+              ✕
+            </button>
+
+            <h2 style={{ margin: '0 0 10px 0', fontSize: '20px' }}>Scan QRIS</h2>
+            <p className="muted" style={{ marginBottom: '16px', fontSize: '14px' }}>
+              {product.icon} {product.name} · Paket {product.duration}
+            </p>
+
+            <div style={{ background: '#f8f9fa', padding: '16px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+              <strong>Total</strong>
+              <strong style={{ color: 'var(--green-dark)', fontSize: '18px' }}>{rupiah(product.price)}</strong>
+            </div>
+
+            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+              <p style={{ fontWeight: 'bold', marginBottom: '10px' }}>Scan QRIS di bawah</p>
+              <div style={{ padding: '8px', background: '#f8f9fa', borderRadius: '12px', display: 'inline-block' }}>
+                {/* GANTI DENGAN GAMBAR QRIS KAMU */}
+                <img src="/qris-dummy.jpeg" alt="QRIS" style={{ width: '100%', maxWidth: '220px', height: 'auto', objectFit: 'contain', display: 'block', margin: '0 auto' }} />
+              </div>
+              <p style={{ fontSize: '12px', color: '#888', marginTop: '10px' }}>Pastikan nominal transfer sesuai.</p>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px' }}>Bukti Transfer</label>
+              <input 
+                type="file" 
+                accept="image/*"
+                onChange={(e) => setFile(e.target.files?.[0] || null)}
+                style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '8px' }}
+              />
+            </div>
+
+            <button
+              onClick={handleManualPay}
+              disabled={!file || loading}
+              style={{
+                width: '100%', 
+                padding: '14px', 
+                background: 'var(--green-dark)', 
+                color: '#fff', 
+                border: 'none', 
+                borderRadius: '8px', 
+                fontWeight: 'bold', 
+                cursor: (!file || loading) ? 'not-allowed' : 'pointer',
+                opacity: (!file || loading) ? 0.7 : 1,
+                marginTop: '16px'
+              }}
+            >
+              {loading ? 'Mengirim...' : 'Saya Sudah Transfer'}
+            </button>
+          </div>
+        </div>
+      )}
 
 
       {/* =================================

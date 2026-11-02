@@ -61,3 +61,69 @@ export async function deleteUserAccount(userId: string): Promise<DeleteResult> {
 
   return { success: true };
 }
+
+type EmailsResult =
+  | { ok: true; emails: Record<string, string> }
+  | { ok: false; error: string };
+
+/**
+ * Ambil map user_id -> email pembeli.
+ * Tabel `profiles` tidak punya kolom email, jadi datanya diambil dari
+ * Auth Admin API (hanya boleh dipanggil oleh admin).
+ */
+export async function getBuyerEmails(): Promise<EmailsResult> {
+  const supabase = await createClient();
+
+  const {
+    data: { user: caller },
+  } = await supabase.auth.getUser();
+
+  if (!caller) {
+    return { ok: false, error: 'Silakan login terlebih dahulu.' };
+  }
+
+  const { data: callerProfile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', caller.id)
+    .single();
+
+  if (callerProfile?.role?.toLowerCase().trim() !== 'admin') {
+    return { ok: false, error: 'Hanya admin yang bisa melihat email pembeli.' };
+  }
+
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!serviceRoleKey) {
+    return { ok: false, error: 'SUPABASE_SERVICE_ROLE_KEY belum dikonfigurasi.' };
+  }
+
+  const adminClient = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    serviceRoleKey,
+    { auth: { autoRefreshToken: false, persistSession: false } },
+  );
+
+  const emails: Record<string, string> = {};
+
+  for (let page = 1; page <= 50; page++) {
+    const { data, error } = await adminClient.auth.admin.listUsers({
+      page,
+      perPage: 1000,
+    });
+
+    if (error) {
+      console.error('LIST_USERS_ERROR:', error.message);
+      return { ok: false, error: error.message || 'Gagal mengambil email pembeli.' };
+    }
+
+    const users = data?.users ?? [];
+    users.forEach(u => {
+      if (u.email) emails[u.id] = u.email;
+    });
+
+    if (users.length < 1000) break;
+  }
+
+  return { ok: true, emails };
+}

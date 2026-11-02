@@ -22,6 +22,7 @@ type Purchase = {
   price_paid: number;
   status: string;
   user_id: string;
+  account_details: string | null;
   products: ProductInfo | ProductInfo[] | null;
 };
 
@@ -101,13 +102,19 @@ export default function AdminLaporanPage() {
   >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [akunModal, setAkunModal] = useState<Purchase | null>(null);
+  const [akunText, setAkunText] = useState('');
+  const [savingAkun, setSavingAkun] = useState(false);
+  const [akunError, setAkunError] = useState<string | null>(null);
 
   const load = useCallback(() => {
     const supabase = createClient();
 
     supabase
       .from('purchases')
-      .select('id, purchased_at, price_paid, status, user_id, products(name)')
+      .select(
+        'id, purchased_at, price_paid, status, user_id, account_details, products(name)',
+      )
       .order('purchased_at', { ascending: false })
       .then(({ data, error: fetchError }) => {
         if (fetchError) {
@@ -126,6 +133,55 @@ export default function AdminLaporanPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+
+  /* =================================
+       INPUT AKUN PREMIUM
+  ================================== */
+  const openAkunModal = (p: Purchase) => {
+    setAkunModal(p);
+    setAkunText(p.account_details ?? '');
+    setAkunError(null);
+  };
+
+  const saveAkun = async () => {
+    if (!akunModal || savingAkun) return;
+
+    setSavingAkun(true);
+    setAkunError(null);
+
+    const supabase = createClient();
+
+    const { error: updateError } = await supabase
+      .from('purchases')
+      .update({ account_details: akunText })
+      .eq('id', akunModal.id);
+
+    if (updateError) {
+      setAkunError(updateError.message);
+      setSavingAkun(false);
+      return;
+    }
+
+    // Notifikasi untuk buyer (non-fatal: akun sudah tersimpan)
+    const { error: notifError } = await supabase.from('notifications').insert({
+      user_id: akunModal.user_id,
+      title: 'Akun Premium Telah Dikirim!',
+      message:
+        'Akun untuk ' +
+        productNameOf(akunModal) +
+        ' sudah siap. Silakan cek di menu Riwayat.',
+      type: 'info',
+    });
+
+    if (notifError) {
+      console.error('NOTIFICATION INSERT ERROR:', notifError);
+    }
+
+    setSavingAkun(false);
+    setAkunModal(null);
+    load();
+  };
 
 
   /* =================================
@@ -284,6 +340,7 @@ export default function AdminLaporanPage() {
                     <th>Buyer ID</th>
                     <th>Amount</th>
                     <th>Status</th>
+                    <th>Aksi</th>
                   </tr>
                 </thead>
 
@@ -291,7 +348,7 @@ export default function AdminLaporanPage() {
 
                   {last10.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="empty">
+                      <td colSpan={6} className="empty">
                         Belum ada transaksi.
                       </td>
                     </tr>
@@ -305,6 +362,14 @@ export default function AdminLaporanPage() {
                         </td>
                         <td>{rupiah(p.price_paid)}</td>
                         <td>{p.status}</td>
+                        <td>
+                          <button
+                            className="btn btn-soft"
+                            onClick={() => openAkunModal(p)}
+                          >
+                            Input Akun
+                          </button>
+                        </td>
                       </tr>
                     ))
                   )}
@@ -319,6 +384,83 @@ export default function AdminLaporanPage() {
 
 
         </>
+      )}
+
+
+      {/* =================================
+           MODAL — INPUT AKUN PREMIUM
+      ================================== */}
+
+      {akunModal && (
+        <div
+          className="modal show"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Input Akun Premium"
+        >
+          <div className="modal-box">
+
+            <button
+              className="close"
+              onClick={() => {
+                if (!savingAkun) setAkunModal(null);
+              }}
+              disabled={savingAkun}
+              aria-label="Tutup"
+            >
+              ×
+            </button>
+
+            <h2 style={{ margin: '0 0 6px' }}>
+              Input Akun Premium
+            </h2>
+
+            <p className="muted" style={{ marginTop: 0 }}>
+              {productNameOf(akunModal)} · #{String(akunModal.id)}
+            </p>
+
+            <div className="field">
+              <label htmlFor="account-details">
+                Masukkan detail akun (Username/Password)
+              </label>
+
+              <textarea
+                id="account-details"
+                rows={5}
+                value={akunText}
+                onChange={e => setAkunText(e.target.value)}
+                placeholder={'username: contoh@email.com\npassword: rahasia'}
+              />
+            </div>
+
+            {akunError && (
+              <p style={{ color: '#d33', margin: '12px 0 0' }}>
+                {akunError}
+              </p>
+            )}
+
+            <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+              <button
+                className="btn btn-primary"
+                style={{ flex: 1 }}
+                onClick={saveAkun}
+                disabled={savingAkun}
+              >
+                {savingAkun ? 'Menyimpan...' : 'Simpan'}
+              </button>
+
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={() => setAkunModal(null)}
+                disabled={savingAkun}
+              >
+                Batal
+              </button>
+            </div>
+
+          </div>
+        </div>
       )}
 
     </div>

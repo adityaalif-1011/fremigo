@@ -1,16 +1,16 @@
 'use server';
 
-import midtransClient from 'midtrans-client';
 import { createClient } from '@/lib/supabase/server';
 
-type MidtransResult = {
-  token?: string;
+type ManualPurchaseResult = {
   error?: string;
 };
 
-export async function createMidtransTransaction(
-  productId: number
-): Promise<MidtransResult> {
+export async function createManualPurchase(
+  productId: number,
+  deliveryEmail: string,
+  proofUrl: string
+): Promise<ManualPurchaseResult> {
   const supabase = await createClient();
 
   const {
@@ -21,9 +21,13 @@ export async function createMidtransTransaction(
     return { error: 'Silakan login terlebih dahulu.' };
   }
 
+  if (!proofUrl) {
+    return { error: 'Bukti transfer wajib diunggah.' };
+  }
+
   const { data: product, error: productError } = await supabase
     .from('products')
-    .select('id, name, price')
+    .select('id, price')
     .eq('id', productId)
     .single();
 
@@ -31,20 +35,15 @@ export async function createMidtransTransaction(
     return { error: 'Produk tidak ditemukan.' };
   }
 
-  const orderId = `ORDER-${Date.now()}-${Math.random()
-    .toString(36)
-    .substring(2, 7)
-    .toUpperCase()}`;
-
-  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-
   const { error: insertError } = await supabase.from('purchases').insert({
     user_id: user.id,
     product_id: product.id,
     price_paid: product.price,
-    order_id: orderId,
+    order_id: 'MANUAL-' + Date.now(),
     status: 'pending',
-    expires_at: expiresAt.toISOString(),
+    payment_proof_url: proofUrl,
+    delivery_email: deliveryEmail,
+    expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     purchased_at: new Date().toISOString(),
   });
 
@@ -53,40 +52,5 @@ export async function createMidtransTransaction(
     return { error: insertError.message || 'Gagal menyimpan pembelian' };
   }
 
-  try {
-    const snap = new midtransClient.Snap({
-      isProduction: false,
-      serverKey: process.env.MIDTRANS_SERVER_KEY!,
-      clientKey: process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY!,
-    });
-
-    const parameter = {
-      transaction_details: {
-        order_id: orderId,
-        gross_amount: product.price,
-      },
-      item_details: [
-        {
-          id: product.id,
-          price: product.price,
-          quantity: 1,
-          name: product.name,
-        },
-      ],
-    };
-
-    const transaction = await snap.createTransaction(parameter);
-
-    return { token: transaction.token };
-  } catch (error) {
-    // Transaksi gagal dibuat di Midtrans -> hapus purchase pending
-    await supabase.from('purchases').delete().eq('order_id', orderId);
-
-    return {
-      error:
-        error instanceof Error
-          ? error.message
-          : 'Gagal membuat transaksi. Coba lagi.',
-    };
-  }
+  return {};
 }
