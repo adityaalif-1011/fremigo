@@ -52,7 +52,7 @@ function BuyButton() {
   );
 }
 
-export default function ProdukDetail() {
+function ProdukDetailContent() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const productId = Number(params.id);
@@ -465,5 +465,13 @@ export default function ProdukDetail() {
         className="toast"
       />
     </>
+  );
+}
+
+export default function ProdukDetail() {
+  return (
+    <Suspense fallback={<p>Memuat produk...</p>}>
+      <ProdukDetailContent />
+    </Suspense>
   );
 }
