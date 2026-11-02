@@ -14,6 +14,7 @@ type Product = {
   name: string;
   cat: string;
   icon: string;
+  image_url: string | null;
   price: number;
   old: number | null;
   duration: string;
@@ -292,9 +293,11 @@ export default function Katalog() {
                     >
                       <Link href={`/produk/${p.id}`}>
                         <div className="app-cover">
-                          <span>
-                            {p.icon}
-                          </span>
+                          <img
+                            src={p.image_url || '/placeholder.png'}
+                            alt={p.name}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
 
                           <span className="stock">
                             Sisa {p.stock}

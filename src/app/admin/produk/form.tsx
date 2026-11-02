@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useState, type ChangeEvent, type FormEvent } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 export type Product = {
@@ -8,6 +8,7 @@ export type Product = {
   name: string;
   cat: string;
   icon: string;
+  image_url: string | null;
   price: number;
   old: number | null;
   duration: string;
@@ -20,7 +21,6 @@ export type Product = {
 type FormState = {
   name: string;
   cat: string;
-  icon: string;
   price: string;
   old_price: string;
   stock: string;
@@ -32,7 +32,6 @@ type FormState = {
 const toFormState = (product: Product | null): FormState => ({
   name: product?.name ?? '',
   cat: product?.cat ?? '',
-  icon: product?.icon ?? '',
   price: product ? String(product.price) : '',
   old_price: product && product.old != null ? String(product.old) : '',
   stock: product ? String(product.stock) : '',
@@ -54,6 +53,19 @@ export default function ProductForm({ product, onClose, onSaved }: ProductFormPr
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Upload gambar produk
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const next = e.target.files?.[0] ?? null;
+
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+
+    setImageFile(next);
+    setImagePreview(next ? URL.createObjectURL(next) : null);
+  };
+
   const setField = (key: keyof FormState) => (value: string) =>
     setForm(prev => ({ ...prev, [key]: value }));
 
@@ -64,10 +76,34 @@ export default function ProductForm({ product, onClose, onSaved }: ProductFormPr
 
     const supabase = createClient();
 
+    // 1. Upload gambar baru (jika dipilih)
+    let imageUrl = product?.image_url ?? null;
+
+    if (imageFile) {
+      const path = `img-${Date.now()}.jpg`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(path, imageFile, { upsert: false });
+
+      if (uploadError) {
+        setError(uploadError.message || 'Gagal mengunggah gambar produk.');
+        setSaving(false);
+        return;
+      }
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('product-images').getPublicUrl(path);
+
+      imageUrl = publicUrl;
+    }
+
     const payload = {
       name: form.name.trim(),
       cat: form.cat.trim(),
-      icon: form.icon.trim(),
+      icon: product?.icon ?? '',
+      image_url: imageUrl,
       price: Number(form.price),
       old: form.old_price.trim() === '' ? null : Number(form.old_price),
       stock: Number(form.stock),
@@ -169,17 +205,32 @@ export default function ProductForm({ product, onClose, onSaved }: ProductFormPr
           </div>
 
 
-          {/* Icon */}
+          {/* Gambar Produk */}
           <div className="field">
-            <label htmlFor="f-icon">Icon (emoji)</label>
+            <label htmlFor="f-image">Gambar Produk</label>
             <input
-              id="f-icon"
-              name="icon"
-              required
-              placeholder="🎨"
-              value={form.icon}
-              onChange={e => setField('icon')(e.target.value)}
+              id="f-image"
+              name="image"
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
             />
+
+            <div style={{ marginTop: 10 }}>
+              <img
+                src={imagePreview ?? product?.image_url ?? '/placeholder.png'}
+                alt="Preview gambar produk"
+                style={{
+                  width: 96,
+                  height: 96,
+                  objectFit: 'cover',
+                  borderRadius: 12,
+                  border: '1px solid var(--line)',
+                  background: '#f5f7f6',
+                  display: 'block',
+                }}
+              />
+            </div>
           </div>
 
 

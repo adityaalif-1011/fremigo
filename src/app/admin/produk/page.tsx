@@ -126,7 +126,7 @@ export default function AdminProdukPage() {
 
             <thead>
               <tr>
-                <th>Icon</th>
+                <th>Gambar</th>
                 <th>Nama Produk</th>
                 <th>Kategori</th>
                 <th>Harga</th>
@@ -147,8 +147,19 @@ export default function AdminProdukPage() {
                 products.map(product => (
                   <tr key={product.id}>
 
-                    <td style={{ fontSize: 24 }}>
-                      {product.icon}
+                    <td>
+                      <img
+                        src={product.image_url || '/placeholder.png'}
+                        alt={product.name}
+                        style={{
+                          width: 40,
+                          height: 40,
+                          objectFit: 'cover',
+                          borderRadius: 8,
+                          border: '1px solid var(--line)',
+                          display: 'block',
+                        }}
+                      />
                     </td>
 
                     <td>
